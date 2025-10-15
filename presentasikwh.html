@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerangka Kerja Inovasi Strategis - Fullscreen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #e6edf3;
+            overflow: hidden; /* Mencegah scrollbar utama */
+        }
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: #30363d;
+            z-index: 50;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #79c0ff;
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+        }
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #161b22;
+            display: flex; /* Menggunakan flexbox untuk penataan konten */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem 5%; /* Padding proporsional */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease-in-out, visibility 0.6s;
+            overflow-y: auto;
+        }
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+        .slide .animated-item {
+            animation: fadeInUp 0.7s ease-out forwards;
+            opacity: 0;
+        }
+        .slide.active .animated-item:nth-child(1) { animation-delay: 0.2s; }
+        .slide.active .animated-item:nth-child(2) { animation-delay: 0.3s; }
+        .slide.active .animated-item:nth-child(3) { animation-delay: 0.4s; }
+        .slide.active .animated-item:nth-child(4) { animation-delay: 0.5s; }
+        .slide.active .animated-item:nth-child(5) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .navigation-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            padding: 1rem;
+        }
+        .nav-button {
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .nav-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(121, 192, 255, 0.3);
+        }
+        .nav-button:disabled { cursor: not-allowed; }
+        
+        .slide-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+        .slide-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(13, 17, 23, 0.7);
+            z-index: -1;
+        }
+        h1 { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 800; line-height: 1.1; }
+        h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); color: #79c0ff; font-weight: 700; }
+        .header-text { color: #79c0ff; }
+
+        @page {
+            size: landscape; /* Biar hasil cetak landscape */
+            margin: 0; /* Hilangkan margin printer */
+        }
+
+        @media print {
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: visible !important;
+            background: #000; /* warna default layar (kalau kamu pakai dark mode) */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+
+        /* Sembunyikan elemen navigasi atau progress */
+        .progress-bar-container,
+        .navigation-overlay {
+            display: none !important;
+        }
+
+        /* Setiap slide menjadi satu halaman penuh */
+        .slide {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            box-shadow: none !important;
+            border: none !important;
+            page-break-after: always !important;
+            page-break-inside: avoid !important;
+            -webkit-print-color-adjust: exact !important;
+        }
+
+        .slide:last-child {
+            page-break-after: auto !important;
+        }
+
+        /* Background gambar tetap berwarna penuh */
+        .slide-bg {
+            opacity: 1 !important;
+            filter: none !important;
+        }
+
+        /* Overlay tetap muncul agar kontras teksnya terjaga */
+        .slide-overlay {
+            background-color: rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* Warna teks tetap seperti di layar */
+        h1, h2, h3, p, span, li {
+            color: inherit !important;
+        }
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="progress-bar-container">
+    <div id="progress-bar" class="progress-bar"></div>
+</div>
+
+<div class="slide-container">
+    
+    <div id="slide-0" class="slide active">
+        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1920&q=80" alt="Team working together" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="text-center">
+            <h2 class="text-5xl font-semibold  text-blue-300 mb-4 animated-item">Presentasi Kewirausahaan</h2>
+            <h1 class="text-indigo-300 font-bold text-2xl  mb-12 animated-item">Kelompok 2</h1>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                <div class="text-center animated-item">
+                    <div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div>
+                    <h3 class="text-xl font-bold">Plorentina Fidelis Purba</h3>
+                </div>
+                <div class="text-center animated-item">
+                    <div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div>
+                    <h3 class="text-xl font-bold">Adam Wahyu Hariyadi</h3>
+                </div>
+                <div class="text-center animated-item">
+                    <div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div>
+                    <h3 class="text-xl font-bold">Nathan Alvino Fam</h3>
+                </div>
+                <div class="text-center animated-item">
+                    <div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div>
+                    <h3 class="text-xl font-bold">Yeshlom Gulo</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="slide-1" class="slide">
+        <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Team collaborating on ideas" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="text-center">
+            <div data-lucide="zap" class="w-20 h-20 mb-6 text-[#79c0ff] mx-auto animated-item"></div>
+            <h1 class="text-white mb-6 animated-item">Membangun ide Kreatif dan inovatif Bisnis</h1>
+            <div class="space-y-6 max-w-3xl mx-auto text-left animated-item">
+                <div class="flex items-start bg-white/5 p-4 rounded-lg">
+                    <div data-lucide="target" class="w-8 h-8 mr-4 text-green-400 mt-1 flex-shrink-0"></div>
+                    <span class="text-xl">Mengubah Ide Orisinal menjadi Solusi Pasar Terukur dan Bernilai.</span>
+                </div>
+                <div class="flex items-start bg-white/5 p-4 rounded-lg">
+                    <div data-lucide="map" class="w-8 h-8 mr-4 text-yellow-400 mt-1 flex-shrink-0"></div>
+                    <span class="text-xl">Menciptakan Peta Jalan Jelas untuk Inovasi Berkelanjutan.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-2" class="slide">
+        <div class="text-center w-full max-w-7xl">
+            <h1 class="header-text animated-item">🧠 Kreativitas vs. Inovasi ⚙️</h1>
+            <p class="text-gray-400 mb-12 text-xl animated-item">Fondasi Konseptual: Jangan Sampai Salah Fokus</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-gray-800/50 p-8 rounded-lg border-l-4 border-purple-500 text-left animated-item">
+                    <h2 class="text-purple-400 mb-4 flex items-center">
+                        <div data-lucide="lightbulb" class="w-8 h-8 mr-3"></div> Kreativitas (Sumber)
+                    </h2>
+                    <ul class="list-disc list-inside space-y-3 text-lg">
+                        <li><strong>Fokus:</strong> Memunculkan ide orisinil (<strong>What to think</strong>).</li>
+                        <li><strong>Sifat:</strong> Subjektif, sulit diukur.</li>
+                        <li><strong>Peran:</strong> Generasi gagasan baru.</li>
+                    </ul>
+                </div>
+                <div class="bg-gray-800/50 p-8 rounded-lg border-l-4 border-teal-500 text-left animated-item">
+                    <h2 class="text-teal-400 mb-4 flex items-center">
+                        <div data-lucide="rocket" class="w-8 h-8 mr-3"></div> Inovasi (Aplikasi)
+                    </h2>
+                    <ul class="list-disc list-inside space-y-3 text-lg">
+                        <li><strong>Fokus:</strong> Menerapkan ide menjadi perubahan terukur (<strong>How to act</strong>).</li>
+                        <li><strong>Sifat:</strong> Objektif, <strong>sepenuhnya dapat diukur</strong> (ROI).</li>
+                        <li><strong>Peran:</strong> Implementasi yang menciptakan nilai.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-3" class="slide">
+         <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Business growth chart" class="slide-bg">
+         <div class="slide-overlay"></div>
+        <div class="text-center max-w-6xl">
+            <h1 class="header-text animated-item">Inovasi = Keberlanjutan Perusahaan</h1>
+            <p class="text-gray-400 mb-10 text-xl animated-item">Pendorong Utama dan Ancaman Kritis</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <div class="p-6 rounded-lg bg-green-900/40 backdrop-blur-sm animated-item">
+                    <div data-lucide="trending-up" class="w-10 h-10 text-green-400 mb-3"></div>
+                    <h3 class="text-2xl font-semibold mb-2">Pendorong Utama</h3>
+                    <p class="text-gray-300">Pertumbuhan, Daya Saing, dan Relevansi Pasar jangka panjang.</p>
+                </div>
+                <div class="p-6 rounded-lg bg-yellow-900/40 backdrop-blur-sm animated-item">
+                    <div data-lucide="bell-off" class="w-10 h-10 text-yellow-400 mb-3"></div>
+                    <h3 class="text-2xl font-semibold mb-2">Ancaman Stagnasi</h3>
+                    <p class="text-gray-300">Inovasi tanpa Kreativitas (rutinitas) = Cepat usang.</p>
+                </div>
+                <div class="p-6 rounded-lg bg-red-900/40 backdrop-blur-sm animated-item">
+                    <div data-lucide="shield-alert" class="w-10 h-10 text-red-400 mb-3"></div>
+                    <h3 class="text-2xl font-semibold mb-2">Risiko Inovasi ⚠️</h3>
+                    <p class="text-gray-300">Membutuhkan Sumber Daya Besar, Waktu Implementasi Lama, dan Risiko Kegagalan Tinggi.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="slide-4" class="slide">
+        <div class="text-center w-full max-w-4xl">
+            <h1 class="header-text mb-4 animated-item">💡 Tiga Domain Inovasi Strategis</h1>
+            <p class="text-gray-400 mb-12 text-xl animated-item">The Triad of Disruption</p>
+            <ol class="space-y-8 text-left">
+                <li class="flex items-center text-2xl p-5 bg-gray-800 rounded-lg shadow-lg border-l-4 border-cyan-500 animated-item">
+                    <div data-lucide="package" class="w-12 h-12 mr-6 text-cyan-400 flex-shrink-0"></div>
+                    <div><strong>Produk:</strong> Menciptakan barang/layanan baru atau yang ditingkatkan secara signifikan.</div>
+                </li>
+                <li class="flex items-center text-2xl p-5 bg-gray-800 rounded-lg shadow-lg border-l-4 border-green-500 animated-item">
+                    <div data-lucide="settings" class="w-12 h-12 mr-6 text-green-400 flex-shrink-0"></div>
+                    <div><strong>Proses:</strong> Mengubah operasional untuk efisiensi dan kualitas.</div>
+                </li>
+                <li class="flex items-center text-2xl p-5 bg-gray-800 rounded-lg shadow-lg border-l-4 border-orange-500 animated-item">
+                    <div data-lucide="wallet" class="w-12 h-12 mr-6 text-orange-400 flex-shrink-0"></div>
+                    <div><strong>Model Bisnis:</strong> Menciptakan nilai dan arsitektur pendapatan yang baru.</div>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <div id="slide-5" class="slide">
+        <div class="w-full max-w-7xl text-center">
+            <h1 class="header-text mb-10 animated-item">🏭 Fokus Internal: Produk & Proses</h1>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                <div class="animated-item">
+                    <h2 class="text-cyan-400 mb-4 flex items-center">
+                        <div data-lucide="tag" class="w-7 h-7 mr-2"></div> Inovasi Produk
+                    </h2>
+                    <ul class="list-disc list-inside space-y-4 text-lg ml-4 text-gray-300">
+                        <li><strong>Diferensiasi Pasar:</strong> Kustomisasi dan Penyesuaian Target Pasar (Ex: Kerajinan Perak Koto Gadang).</li>
+                        <li><strong>Daya Jual:</strong> Menciptakan keunikan yang tidak mudah ditiru.</li>
+                    </ul>
+                </div>
+                <div class="animated-item">
+                    <h2 class="text-green-400 mb-4 flex items-center">
+                        <div data-lucide="activity" class="w-7 h-7 mr-2"></div> Inovasi Proses
+                    </h2>
+                    <ul class="list-disc list-inside space-y-4 text-lg ml-4 text-gray-300">
+                        <li><strong>Efisiensi:</strong> Peningkatan Operasional (Ex: Sistem pembayaran terpusat di Pujasera).</li>
+                        <li><strong>Teknologi:</strong> Adaptasi teknologi untuk UX optimal (Ex: Gojek untuk layanan).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-6" class="slide">
+        <div class="text-center w-full max-w-7xl">
+            <h1 class="header-text mb-4 animated-item">🌊 Blue Ocean Strategy</h1>
+            <p class="text-gray-400 mb-10 text-xl animated-item">Menciptakan Pasar Baru vs. Bersaing di Pasar Jenuh</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                <div class="p-8 rounded-lg bg-red-900/40 relative overflow-hidden animated-item">
+                    <img src="https://images.unsplash.com/photo-1524704796725-9fc3044a58b2?auto=format&fit=crop&w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-20"/>
+                    <div class="relative">
+                        <h3 class="text-3xl font-bold text-red-300 mb-3 flex items-center"><div data-lucide="waves" class="w-8 h-8 mr-2"></div> Red Ocean</h3>
+                        <p class="text-lg">Pasar Jenuh, Persaingan Harga Tinggi, Margin Tipis.</p>
+                        <p class="text-md italic mt-2 opacity-80">Fokus merebut permintaan yang ada.</p>
+                    </div>
+                </div>
+                <div class="p-8 rounded-lg bg-blue-900/40 relative overflow-hidden animated-item">
+                    <img src="https://images.unsplash.com/photo-1509343256512-d77a5cb3791b?auto=format&fit=crop&w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-20"/>
+                    <div class="relative">
+                        <h3 class="text-3xl font-bold text-blue-300 mb-3 flex items-center"><div data-lucide="anchor" class="w-8 h-8 mr-2"></div> Blue Ocean</h3>
+                        <p class="text-lg">Menciptakan Ruang Pasar Baru tanpa Persaingan.</p>
+                        <p class="text-md italic mt-2 opacity-80">Fokus menciptakan dan menangkap permintaan baru.</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-lg mt-10 text-yellow-300 animated-item">Contoh: Strategi pionir Super-app (Gojek) atau Energi Bersih (Tesla).</p>
+        </div>
+    </div>
+
+    <div id="slide-7" class="slide !flex-col lg:!flex-row !justify-between">
+        <div class="lg:w-1/2 text-center lg:text-left">
+            <h1 class="header-text mb-4 animated-item">🧑‍🤝‍🧑 Design Thinking</h1>
+            <p class="text-gray-400 mb-8 text-2xl animated-item">Pendekatan Berpusat pada Manusia</p>
+            <div class="space-y-8 max-w-lg mx-auto lg:mx-0">
+                <div class="p-6 bg-purple-900/40 rounded-lg border-l-4 border-purple-500 animated-item">
+                    <h3 class="text-2xl font-bold text-purple-300">1. Define (Fokus Masalah)</h3>
+                    <p class="text-gray-400 mt-2">Mengumpulkan ide yang berfokus pada masalah inti pengguna.</p>
+                </div>
+                <div class="p-6 bg-purple-900/40 rounded-lg border-l-4 border-purple-500 animated-item">
+                    <h3 class="text-2xl font-bold text-purple-300">2. Ideate (Generasi Ide)</h3>
+                    <p class="text-gray-400 mt-2">Generasi ide yang terus disempurnakan (Brainstorming).</p>
+                </div>
+            </div>
+            <p class="mt-8 text-xl text-teal-400 animated-item"><strong>Tujuan:</strong> Memecahkan masalah pengguna dengan solusi paling efektif.</p>
+        </div>
+        <div class="lg:w-5/12 h-full w-full mt-8 lg:mt-0">
+             <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80" alt="Design thinking process" class="w-full h-full object-cover rounded-lg shadow-2xl animated-item">
+        </div>
+    </div>
+    
+    <div id="slide-8" class="slide">
+        <div class="w-full max-w-5xl text-center">
+            <h1 class="header-text mb-4 animated-item">🛠️ SCAMPER Framework</h1>
+            <p class="text-gray-400 mb-10 text-xl animated-item">7 Lensa untuk Pengembangan Produk Inkremental</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-lg">
+                <div class="p-6 bg-gray-700/50 rounded-lg animated-item"><strong>S:</strong> Substitute</div>
+                <div class="p-6 bg-gray-700/50 rounded-lg animated-item"><strong>C:</strong> Combine</div>
+                <div class="p-6 bg-gray-700/50 rounded-lg animated-item"><strong>A:</strong> Adapt</div>
+                <div class="p-6 bg-gray-700/50 rounded-lg animated-item"><strong>M:</strong> Modify</div>
+                <div class="p-6 bg-gray-700/50 rounded-lg animated-item"><strong>P:</strong> Put to Another Use</div>
+                <div class="p-6 bg-gray-700/50 rounded-lg animated-item"><strong>E:</strong> Eliminate</div>
+                <div class="p-6 bg-gray-700/50 rounded-lg col-span-2 md:col-span-2 animated-item"><strong>R:</strong> Rearrange</div>
+            </div>
+            <p class="mt-10 text-center text-xl text-cyan-400 animated-item">Terapkan pada produk/layanan yang sudah ada untuk mencari perbaikan cepat.</p>
+        </div>
+    </div>
+
+    <div id="slide-9" class="slide">
+        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="max-w-4xl text-center">
+            <h1 class="header-text mb-4 animated-item">✍️ Best Practice: Brainstorming Efektif</h1>
+            <p class="text-gray-400 mb-10 text-xl animated-item">Optimalisasi Input Kreatif</p>
+            <div class="space-y-6 text-left">
+                <div class="flex items-start p-6 bg-gray-800/70 rounded-lg animated-item">
+                    <div data-lucide="compass" class="w-10 h-10 mr-5 text-orange-400 flex-shrink-0"></div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-orange-300">Fokus Tujuan</h3>
+                        <p class="text-gray-300 text-lg">Tetapkan tujuan utama yang jelas. Jangan multi-tasking masalah dalam satu sesi.</p>
+                    </div>
+                </div>
+                <div class="flex items-start p-6 bg-gray-800/70 rounded-lg animated-item">
+                    <div data-lucide="wind" class="w-10 h-10 mr-5 text-blue-400 flex-shrink-0"></div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-blue-300">Lingkungan Kondusif</h3>
+                        <p class="text-gray-300 text-lg">Ciptakan suasana nyaman untuk menjernihkan pikiran dan memicu ide baru.</p>
+                    </div>
+                </div>
+                <div class="flex items-start p-6 bg-gray-800/70 rounded-lg animated-item">
+                    <div data-lucide="tool" class="w-10 h-10 mr-5 text-green-400 flex-shrink-0"></div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-green-300">Seleksi Alat Diagnostik</h3>
+                        <p class="text-gray-300 text-lg">Pilih metode ideasi (DT vs. SCAMPER) yang sesuai dengan masalah.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-10" class="slide">
+        <div class="text-center w-full max-w-5xl">
+            <h1 class="header-text mb-4 animated-item">🛑 5 Langkah Validasi Ide Kritis</h1>
+            <p class="text-gray-400 mb-10 text-xl animated-item">Filter Risiko Utama: Gagal Cepat, Belajar Cepat</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center text-lg">
+                <div class="p-5 bg-teal-900/40 rounded-lg border-b-2 border-teal-500 animated-item">1. Identifikasi Pasar Target & Analisis Kompetisi.</div>
+                <div class="p-5 bg-teal-900/40 rounded-lg border-b-2 border-teal-500 animated-item">2. Buat Prototipe atau <strong>MVP</strong> (Minimum Viable Product).</div>
+                <div class="p-5 bg-teal-900/40 rounded-lg border-b-2 border-teal-500 animated-item">3. Uji Tawarkan Produk dan Kumpulkan <strong>Data Nyata</strong>.</div>
+                <div class="p-5 bg-teal-900/40 rounded-lg border-b-2 border-teal-500 animated-item">4. Evaluasi Performa Produk (Metrik Utama).</div>
+                <div class="p-5 bg-teal-900/40 rounded-lg md:col-span-2 border-b-2 border-teal-500 animated-item">5. Skala dan Diversifikasi (Jika Validasi sukses).</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-11" class="slide text-center">
+        <h1 class="header-text mb-4 animated-item">🔄 Siklus Umpan Balik (Feedback Loop)</h1>
+        <p class="text-gray-400 mb-12 text-xl animated-item">Memastikan Relevansi Pasar Berkelanjutan</p>
+        <div data-lucide="refresh-cw" class="w-28 h-28 text-purple-400 animate-spin [animation-duration:5s] mx-auto animated-item"></div>
+        <p class="text-3xl mt-8 text-yellow-300 max-w-3xl animated-item">Umpan Balik Mengubah Ide yang Divalidasi menjadi <strong>Produk yang Relevan</strong>.</p>
+    </div>
+
+    <div id="slide-12" class="slide !flex-col lg:!flex-row !justify-between">
+        <div class="lg:w-5/12 h-full w-full order-2 lg:order-1 mt-8 lg:mt-0">
+             <img src="https://img.freepik.com/free-photo/leader-authority-boss-coach-director-manager-concept_53876-133859.jpg?w=996" alt="Inspirational leader" class="w-full h-full object-cover rounded-lg shadow-xl animated-item">
+        </div>
+        <div class="lg:w-1/2 text-center lg:text-left order-1 lg:order-2">
+            <h1 class="header-text mb-4 animated-item">⭐ Pilar Kepemimpinan</h1>
+            <p class="text-gray-400 mb-8 text-xl animated-item">Kepemimpinan Sebagai Katalisator Inovasi</p>
+            <div class="space-y-6 text-left">
+                <div class="flex items-start p-4 bg-blue-900/40 rounded-lg animated-item">
+                    <div data-lucide="eye" class="w-8 h-8 mr-4 text-blue-400 flex-shrink-0"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-blue-300">Visi dan Teladan</h3>
+                        <p class="text-gray-300">Ciptakan visi inovasi yang jelas dan pimpin dengan menerima <i>smart failure</i>.</p>
+                    </div>
+                </div>
+                <div class="flex items-start p-4 bg-blue-900/40 rounded-lg animated-item">
+                    <div data-lucide="thumbs-up" class="w-8 h-8 mr-4 text-blue-400 flex-shrink-0"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-blue-300">Dukungan Penuh</h3>
+                        <p class="text-gray-300">Sediakan sumber daya dan <strong>hilangkan hambatan birokrasi</strong>.</p>
+                    </div>
+                </div>
+                 <div class="flex items-start p-4 bg-blue-900/40 rounded-lg animated-item">
+                    <div data-lucide="shuffle" class="w-8 h-8 mr-4 text-blue-400 flex-shrink-0"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-blue-300">Manajemen Perubahan</h3>
+                        <p class="text-gray-300">Kelola resistensi, berikan pelatihan, dan pimpin dengan transparansi.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-13" class="slide flex items-center justify-center px-4 sm:px-8 lg:px-16">
+        <div class="text-center w-full max-w-6xl">
+            <!-- Judul -->
+            <h1 class="header-text mb-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold animated-item">
+            🧑‍💻 Organisasi & Talenta
+            </h1>
+
+            <!-- Subjudul -->
+            <p class="text-gray-400 mb-10 text-base sm:text-lg md:text-xl animated-item">
+            Mendesain Sistem Pendukung Inovasi
+            </p>
+
+            <!-- Konten grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left text-sm sm:text-base md:text-lg">
+            
+            <!-- Kolom kiri -->
+            <div class="space-y-4 animated-item">
+                <h2 class="text-xl sm:text-2xl text-gray-300 font-bold">Struktur & Insentif</h2>
+                <ul class="list-disc list-inside ml-4 text-gray-300 space-y-2">
+                <li>
+                    <strong>Struktur Fleksibel:</strong> Tim lintas fungsi yang datar dan adaptif.
+                </li>
+                <li>
+                    <strong>Insentif 🏆:</strong> Sistem penghargaan yang adil untuk memotivasi ide.
+                </li>
+                </ul>
+            </div>
+
+            <!-- Kolom kanan -->
+            <div class="space-y-4 animated-item">
+                <h2 class="text-xl sm:text-2xl text-gray-300 font-bold">Talenta & Kolaborasi</h2>
+                <ul class="list-disc list-inside ml-4 text-gray-300 space-y-2">
+                <li>
+                    <strong>Pengembangan Talenta:</strong> Latih kreativitas & <i>learning from failure</i>.
+                </li>
+                <li>
+                    <strong>Jejaring Internal:</strong> Fasilitasi kolaborasi untuk percepatan implementasi.
+                </li>
+                </ul>
+            </div>
+            </div>
+        </div>
+        </div>
+
+
+
+    <div id="slide-14" class="slide">
+        <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" class="slide-bg">
+        <div class="slide-overlay !bg-opacity-80"></div>
+        <div class="text-center">
+            <h1 class="text-green-400 mb-8 animated-item">✅ Kesimpulan & Tindakan Kritis</h1>
+            <div class="space-y-5 max-w-4xl text-left animated-item">
+                <div class="flex items-center p-4 bg-green-900/40 rounded-lg">
+                    <div data-lucide="system-task" class="w-8 h-8 mr-4 text-green-300 flex-shrink-0"></div>
+                    <span class="text-xl font-semibold">Inovasi adalah <strong>sistem terencana</strong>, bukan kebetulan.</span>
+                </div>
+                <div class="flex items-center p-4 bg-green-900/40 rounded-lg">
+                    <div data-lucide="gauge" class="w-8 h-8 mr-4 text-green-300 flex-shrink-0"></div>
+                    <span class="text-xl font-semibold">Prioritaskan sumber daya berdasarkan hasil <strong>Validasi MVP</strong> (Data-Driven).</span>
+                </div>
+                <div class="flex items-center p-4 bg-green-900/40 rounded-lg">
+                    <div data-lucide="architecture" class="w-8 h-8 mr-4 text-green-300 flex-shrink-0"></div>
+                    <span class="text-xl font-semibold">Investasikan pada <strong>Arsitektur Organisasi</strong>: Kepemimpinan & Struktur.</span>
+                </div>
+                <div class="flex items-center p-4 bg-green-900/40 rounded-lg">
+                    <div data-lucide="message-square" class="w-8 h-8 mr-4 text-green-300 flex-shrink-0"></div>
+                    <span class="text-xl font-semibold">Jadikan <strong>Feedback Pelanggan</strong> bahan bakar pengembangan produk.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-15" class="slide">
+        <img src="https://images.unsplash.com/photo-1529119368496-2dfda6ec2804?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Handshake and connection" class="slide-bg">
+        <div class="slide-overlay !bg-opacity-80"></div>
+
+        <div class="text-center flex flex-col items-center justify-center h-full">
+
+            <div data-lucide="sparkles" class="w-20 h-20 mb-6 text-yellow-300 animated-item"></div>
+
+            <h1 class="text-white mb-4 animated-item">
+                Terima Kasih
+            </h1>
+
+            <h2 class="text-4xl text-[#79c0ff] font-bold mb-12 animated-item">
+                Apakah ada pertanyaan?
+            </h2>
+
+        </div>
+    </div>
+</div>
+
+<div class="navigation-overlay">
+    <div class="flex justify-center items-center space-x-4 max-w-lg mx-auto">
+        <button id="download-pdf-btn" class="nav-button bg-teal-600 hover:bg-teal-500 text-white font-bold p-3 rounded-full flex items-center" title="Download as PDF">
+            <i data-lucide="download" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex justify-center items-center space-x-4 bg-gray-800/50 backdrop-blur-sm rounded-full p-1">
+            <button id="prev-btn" class="nav-button bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-5 rounded-full flex items-center disabled:opacity-50" disabled>
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+            <span id="slide-indicator" class="text-lg text-white font-semibold tabular-nums">1 / 16</span>
+            <button id="next-btn" class="nav-button bg-[#79c0ff] hover:bg-[#68a7e0] text-[#0d1117] font-bold py-2 px-5 rounded-full flex items-center">
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const downloadBtn = document.getElementById('download-pdf-btn');
+        const indicator = document.getElementById('slide-indicator');
+        const progressBar = document.getElementById('progress-bar');
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach((slide) => {
+                slide.classList.remove('active');
+            });
+            slides[currentSlide].classList.add('active');
+
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+            
+            indicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            const progressPercentage = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+
+            lucide.createIcons();
+        }
+
+        function goToNextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function goToPrevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Event listener untuk tombol download
+        downloadBtn.addEventListener('click', function() {
+            window.print();
+        });
+
+        nextBtn.addEventListener('click', goToNextSlide);
+        prevBtn.addEventListener('click', goToPrevSlide);
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                goToNextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                goToPrevSlide();
+            }
+        });
+        
+        updateSlide();
+    });
+</script>
+
+</body>
+</html>
