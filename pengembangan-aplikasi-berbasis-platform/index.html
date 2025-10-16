@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Berbasis CLI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #e6edf3;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .slide-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slide {
+            position: absolute;
+            width: 100%;
+            padding: 3rem;
+            border-radius: 1.5rem;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.8s ease-out;
+            display: none;
+            flex-direction: column;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .slide.active {
+            display: flex;
+        }
+        .list-style-none {
+            list-style: none;
+        }
+        .rainbow-gradient-text {
+            background: linear-gradient(to right, #6a11cb, #2575fc, #ffc000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
+        .rainbow-shadow {
+            text-shadow: 0 0 5px #2575fc, 0 0 10px #4ac6ff, 0 0 15px #43e97b;
+        }
+        .nav-button {
+            background-color: #21262d;
+            border: 2px solid #30363d;
+            color: #c9d1d9;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            border-radius: 50%;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-button:hover {
+            background-color: #30363d;
+            border-color: #444c56;
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-6 min-h-screen">
+
+    <div class="slide-container">
+        <div class="slide active items-center justify-center text-center">
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-8 text-indigo-300">
+                Aplikasi Berbasis CLI
+            </h1>
+            <p class="text-2xl md:text-3xl font-bold mb-4">
+                Disusun oleh:
+            </p>
+            <ul class="text-xl md:text-2xl space-y-2">
+                <li>1. Adam Wahyu Haryadi</li>
+                <li>2. Plorentina Purba</li>
+                <li>3. Nathan Alvino Fam</li>
+                <li>4. Aquinus Arfan</li>
+                <li>5. Yeshalom Gulo</li>
+            </ul>
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Pengantar CLI (Command Line Interface)</h1>
+            <p class="text-lg md:text-xl mb-4 leading-relaxed">
+                <strong class="font-bold">Definisi:</strong> Antarmuka berbasis teks yang memungkinkan interaksi dengan sistem operasi melalui perintah.
+            </p>
+            <p class="text-lg md:text-xl mb-4 leading-relaxed">
+                <strong class="font-bold">Contoh:</strong> Terminal (Linux/Mac) dan Command Prompt atau PowerShell (Windows).
+            </p>
+            <p class="text-lg md:text-xl mt-8 leading-relaxed border-t border-gray-700 pt-4">
+                <strong class="font-bold">Fungsi Umum:</strong>
+            </p>
+            <ul class="list-style-none text-base md:text-lg space-y-2 leading-relaxed">
+                <li>• Menjalankan skrip (Bash, Python)</li>
+                <li>• Mengotomasi tugas (cron)</li>
+                <li>• Mengelola server remote via SSH</li>
+            </ul>
+            
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Karakteristik Aplikasi CLI</h1>
+            <ul class="list-style-none text-lg md:text-xl space-y-6">
+                <li>
+                    <strong class="font-bold">Berbasis Teks:</strong> Input melalui keyboard, output ditampilkan sebagai teks.
+                </li>
+                <li>
+                    <strong class="font-bold">Responsif dan Ringan:</strong> Minim elemen grafis, sehingga hemat sumber daya (CPU/RAM).
+                </li>
+                <li>
+                    <strong class="font-bold">Modular dengan Shell:</strong> Dijalankan di dalam shell (Bash, PowerShell) yang kaya fitur.
+                </li>
+                <li>
+                    <strong class="font-bold">Multi-platform:</strong> Mayoritas CLI dapat digunakan di berbagai sistem operasi.
+                </li>
+                <li>
+                    <strong class="font-bold">Kurva Belajar:</strong> Membutuhkan pemahaman sintaks yang mungkin tidak intuitif bagi pemula.
+                </li>
+            </ul>
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Perbandingan CLI vs GUI</h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg md:text-xl">
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">CLI</h2>
+                    <ul class="list-style-none space-y-2">
+                        <li>🔥 <strong class="font-bold">Kecepatan:</strong> Sangat cepat untuk ahli.</li>
+                        <li>⚙️ <strong class="font-bold">Otomasi:</strong> Unggul dalam skrip dan tugas berulang.</li>
+                        <li>💾 <strong class="font-bold">Sumber Daya:</strong> Sangat ringan.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">GUI</h2>
+                    <ul class="list-style-none space-y-2">
+                        <li>🖱️ <strong class="font-bold">Kemudahan:</strong> Ramah pemula, sangat visual.</li>
+                        <li>🖼️ <strong class="font-bold">Antarmuka:</strong> Ikon, tombol, dan jendela.</li>
+                        <li>⚖️ <strong class="font-bold">Sumber Daya:</strong> Lebih berat karena grafis.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Keunggulan & Kekurangan CLI</h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg md:text-xl">
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">👍 Keunggulan</h2>
+                    <ul class="list-style-none space-y-2">
+                        <li>✅ Eksekusi super cepat & efisien</li>
+                        <li>✅ Mengelola server jarak jauh (via SSH)</li>
+                        <li>✅ Otomasi tugas berulang</li>
+                        <li>✅ Kontrol sistem lebih dalam & presisi</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">👎 Kekurangan</h2>
+                    <ul class="list-style-none space-y-2">
+                        <li>❌ Kurva pembelajaran tinggi</li>
+                        <li>❌ Rentan kesalahan ketik</li>
+                        <li>❌ Tidak intuitif bagi pemula</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Tools Umum untuk Membuat Aplikasi CLI</h1>
+            <ul class="list-style-none text-lg md:text-xl space-y-4">
+                <li>
+                    <strong class="font-bold">Python:</strong> argparse, Click, Typer
+                </li>
+                <li>
+                    <strong class="font-bold">Node.js:</strong> commander, yargs, Inquirer.js
+                </li>
+                <li>
+                    <strong class="font-bold">Go:</strong> Cobra, flag
+                </li>
+                <li>
+                    <strong class="font-bold">Rust:</strong> crate clap
+                </li>
+                <li>
+                    <strong class="font-bold">Lainnya:</strong> C/C++, PHP, .NET, Bash
+                </li>
+            </ul>
+        </div>
+
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Contoh Aplikasi CLI Sederhana</h1>
+            <ul class="list-style-none text-lg md:text-xl space-y-4">
+                <li>
+                    <strong class="font-bold">📝 To-Do List:</strong> Mengelola daftar tugas via terminal.
+                </li>
+                <li>
+                    <strong class="font-bold">➕ Kalkulator Sederhana:</strong> Program yang menerima operasi matematika.
+                </li>
+                <li>
+                    <strong class="font-bold">🔄 Pengolah Teks:</strong> Aplikasi yang membalik atau menghitung karakter teks.
+                </li>
+                <li>
+                    <strong class="font-bold">🖥️ Utilitas Sistem:</strong> Perintah umum seperti <code>ls</code>, <code>grep</code>, atau tool Git.
+                </li>
+            </ul>
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Langkah-Langkah Pembuatan</h1>
+            <ul class="list-style-none text-lg md:text-xl space-y-4">
+                <li>
+                    <strong class="font-bold">1. Tentukan Kebutuhan:</strong> Rancang fungsionalitas utama.
+                </li>
+                <li>
+                    <strong class="font-bold">2. Parsing Argumen:</strong> Baca input, opsi, dan flag pengguna.
+                </li>
+                <li>
+                    <strong class="font-bold">3. Validasi Input:</strong> Cek input agar aplikasi tidak error.
+                </li>
+                <li>
+                    <strong class="font-bold">4. Proses Logika:</strong> Eksekusi fungsi berdasarkan perintah.
+                </li>
+                <li>
+                    <strong class="font-bold">5. Tampilkan Output:</strong> Berikan hasil yang jelas ke terminal.
+                </li>
+                <li>
+                    <strong class="font-bold">6. Pengujian:</strong> Uji coba di berbagai skenario.
+                </li>
+                <li>
+                    <strong class="font-bold">7. Distribusi:</strong> Buat aplikasi mudah diinstal/paket.
+                </li>
+            </ul>
+        </div>
+
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Praktik Terbaik (Best Practices)</h1>
+            <ul class="list-style-none text-lg md:text-xl space-y-4">
+                <li>
+                    <strong class="font-bold">Pesan Bantuan:</strong> Sediakan opsi <code>--help</code> yang informatif.
+                </li>
+                <li>
+                    <strong class="font-bold">Penanganan Error:</strong> Tangani kesalahan dan berikan pesan deskriptif.
+                </li>
+                <li>
+                    <strong class="font-bold">Autocompletion:</strong> Pertimbangkan fitur tab-autocomplete.
+                </li>
+                <li>
+                    <strong class="font-bold">Versioning:</strong> Terapkan penomoran versi yang semantis.
+                </li>
+                <li>
+                    <strong class="font-bold">Keamanan:</strong> Hati-hati mengelola input pengguna.
+                </li>
+            </ul>
+        </div>
+        
+        <div class="slide items-center justify-center text-left">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Kesimpulan</h1>
+            <p class="text-lg md:text-xl mb-4 leading-relaxed">
+                <strong class="font-bold">CLI</strong> tetap menjadi alat penting bagi pengembang dan administrator, menawarkan kontrol mendalam dan efisiensi sumber daya.
+            </p>
+            <p class="text-lg md:text-xl mb-4 leading-relaxed">
+                Kemampuan **otomasi tugas** dan **manajemen server jarak jauh** membuatnya tak tergantikan.
+            </p>
+            <p class="text-lg md:text-xl leading-relaxed">
+                Memahami CLI adalah **keterampilan krusial** dalam dunia profesional IT modern.
+            </p>
+        </div>
+
+        <div class="slide items-center justify-center text-center">
+            <div class="flex flex-col items-center justify-center h-full text-center">
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-8 ">
+                    Terima Kasih!
+                </h1>
+                <p class="text-2xl md:text-4xl font-bold">
+                    Ada pertanyaan?
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-8 flex space-x-4">
+        <button id="prevBtn" class="nav-button hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <button id="nextBtn" class="nav-button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                <path fill-rule="evenodd" d="M16.28 12.28a.75.75 0 0 0 0-1.06l-7.5-7.5a.75.75 0 0 0-1.06 1.06L14.69 12l-6.97 6.97a.75.75 0 1 0 1.06 1.06l7.5-7.5Z" clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        let currentSlide = 0;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+            updateButtons();
+        }
+
+        function updateButtons() {
+            prevBtn.classList.toggle('hidden', currentSlide === 0);
+            nextBtn.classList.toggle('hidden', currentSlide === slides.length - 1);
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        });
+
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>

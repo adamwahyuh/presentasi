@@ -1,32 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presentasi Adam</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presentasi Adam</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    <div class="w-full max-w-md text-center">
-        <h2 class="text-4xl font-bold text-gray-800 mb-8">
-            Presentasi Adam
-        </h2>
-        
-        <a href="./kewirausahaan/" class="group block bg-white p-8 rounded-xl border border-gray-200 shadow-md hover:shadow-lg hover:border-blue-500 transition-all duration-300 ease-in-out">
-            <div class="flex flex-col items-center justify-center space-y-4">
-                <div class="bg-blue-100 text-blue-600 p-4 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-presentation">
-                        <path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>
-                    </svg>
-                </div>
-                <span class="text-xl font-semibold text-gray-700 group-hover:text-blue-600 transition-colors duration-300">
-                    Presentasi Kewirausahaan
-                </span>
-            </div>
-        </a>
-    </div>
+  <script>
+    tailwind.config = {
+      darkMode: "media",
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: "#eff6ff",
+              100: "#dbeafe",
+              500: "#3b82f6",
+              600: "#2563eb",
+            },
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-300">
+
+  <div class="w-full max-w-2xl text-center">
+    <h2 class="text-4xl font-extrabold mb-10 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+      Presentasi Adam
+    </h2>
+
+    <!-- Container Cards -->
+    <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+  </div>
+
+  <script>
+    // === Data Card ===
+    const presentations = [
+      { label: "Presentasi Kewirausahaan", link: "./kewirausahaan/" },
+      { label: "Pengembangan Aplikasi Berbasis Platform", link: "./pengembangan-aplikasi-berbasis-platform/" },
+      // Tambah card baru di sini:
+      // { label: "Judul Baru", link: "./folder-baru/" }
+    ];
+
+    // === Render Cards ===
+    const container = document.getElementById("cards-container");
+
+    presentations.forEach((p) => {
+      const card = document.createElement("a");
+      card.href = p.link;
+      card.className = `
+        group relative flex flex-col items-center justify-center gap-4
+        p-8 rounded-2xl border border-gray-200/50 dark:border-gray-700/50
+        bg-white/70 dark:bg-gray-800/50 backdrop-blur-md
+        shadow-md hover:shadow-xl
+        hover:scale-[1.03] transition-all duration-300
+      `;
+
+      card.innerHTML = `
+        <div class="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-600 dark:text-blue-400 p-4 rounded-full">
+          <i data-lucide="presentation" class="w-8 h-8"></i>
+        </div>
+        <span class="text-lg font-semibold text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+          ${p.label}
+        </span>
+
+        <span class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-blue-500 dark:text-blue-400">
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </span>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // === Inisialisasi ikon lucide ===
+    lucide.createIcons();
+  </script>
 
 </body>
 </html>
