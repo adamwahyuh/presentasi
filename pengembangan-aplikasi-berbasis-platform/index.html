@@ -6,17 +6,36 @@
     <title>Presentasi: Aplikasi Berbasis CLI</title>
     <link rel="shortcut icon" type="image/x-icon" href="./../favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #020617;
-            background-image: radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 50%),
-                              radial-gradient(circle at bottom left, rgba(76, 29, 149, 0.1), transparent 50%);
-            color: #e2e8f0;
-            overflow: hidden;
-            height: 100vh;
+            background-color: #0d1117;
+            color: #e6edf3;
+            overflow: hidden; /* Mencegah scrollbar utama */
+        }
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: #30363d;
+            z-index: 50;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #79c0ff;
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+        }
+        .slide-container {
             width: 100vw;
+            height: 100vh;
+            position: relative;
         }
         .slide {
             position: absolute;
@@ -24,365 +43,400 @@
             left: 0;
             width: 100%;
             height: 100%;
-            padding: 2rem 5%; /* Padding responsif */
-            background-color: rgba(15, 23, 42, 0.5);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background-color: #161b22;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem 5%;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-            transform: translateX(100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: opacity 0.6s ease-in-out, visibility 0.6s;
+            overflow-y: auto;
         }
         .slide.active {
             opacity: 1;
             visibility: visible;
-            transform: translateX(0);
             z-index: 10;
         }
-        .slide.exiting {
-            transform: translateX(-100%);
-            z-index: 9;
+        .slide .animated-item {
+            animation: fadeInUp 0.7s ease-out forwards;
+            opacity: 0;
         }
-        .rainbow-gradient-text {
-            background: linear-gradient(90deg, #38bdf8, #818cf8, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 900;
+        .slide.active .animated-item:nth-child(1) { animation-delay: 0.2s; }
+        .slide.active .animated-item:nth-child(2) { animation-delay: 0.3s; }
+        .slide.active .animated-item:nth-child(3) { animation-delay: 0.4s; }
+        .slide.active .animated-item:nth-child(4) { animation-delay: 0.5s; }
+        .slide.active .animated-item:nth-child(5) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .navigation-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            padding: 1rem;
         }
         .nav-button {
-            background-color: rgba(30, 41, 59, 0.7); /* slate-800 with opacity */
-            border: 1px solid #334155; /* slate-700 */
-            color: #94a3b8; /* slate-400 */
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
-        .nav-button:hover {
-            background-color: #334155; /* slate-700 */
-            transform: scale(1.1);
-            color: #e2e8f0; /* slate-200 */
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        .nav-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(121, 192, 255, 0.3);
         }
-        .nav-button.hidden {
-            opacity: 0;
-            pointer-events: none;
+        .nav-button:disabled { cursor: not-allowed; }
+        
+        .slide-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            filter: brightness(0.6);
         }
-        .progress-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #38bdf8, #818cf8);
-            width: 0%;
-            transition: width 0.4s ease-out;
-            z-index: 50;
+        .slide-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(13, 17, 23, 0.7);
+            z-index: -1;
         }
+        h1 { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 800; line-height: 1.1; }
+        h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); color: #79c0ff; font-weight: 700; }
+        .header-text { color: #79c0ff; }
         .slide-image {
             width: 100%;
             height: auto;
-            max-height: 70vh; /* Batasi tinggi gambar agar tidak terlalu besar */
+            max-height: 60vh;
             object-fit: contain;
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
-        /* Custom class for slide content wrapper */
-        .slide-content {
-            width: 100%;
-            max-width: 1200px; /* Max width for content on large screens */
+
+        @page { size: landscape; margin: 0; }
+        @media print {
+            html, body {
+                width: 100%; height: 100%; margin: 0; padding: 0;
+                overflow: visible !important; background: #161b22 !important;
+                -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+            }
+            .progress-bar-container, .navigation-overlay { display: none !important; }
+            .slide {
+                display: flex !important; visibility: visible !important; opacity: 1 !important;
+                position: relative !important; width: 100vw !important; height: 100vh !important;
+                page-break-after: always !important; page-break-inside: avoid !important;
+            }
+            .slide:last-child { page-break-after: auto !important; }
+            .slide-bg { filter: brightness(0.6) !important; }
+            .slide-overlay { background-color: rgba(13, 17, 23, 0.7) !important; }
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center">
+<body>
 
-    <div class="progress-bar" id="progressBar"></div>
+<div class="progress-bar-container">
+    <div id="progress-bar" class="progress-bar"></div>
+</div>
 
-    <div id="slide-container" class="relative w-full h-full">
-
-        <div class="slide active">
-            <div class="slide-content text-center">
-                <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-6 text-sky-300">
-                    Aplikasi Berbasis CLI
-                </h1>
-                <p class="text-2xl md:text-3xl font-bold mb-4 text-slate-300">
-                    Disusun oleh:
-                </p>
-                <div class="text-xl md:text-2xl space-y-2 max-w-md mx-auto text-slate-400">
-                    <p>1. Adam Wahyu Haryadi</p>
-                    <p>2. Plorentina Purba</p>
-                    <p>3. Nathan Alvino Fam</p>
-                    <p>4. Aquinus Arfan</p>
-                    <p>5. Yeshalom Gulo</p>
-                </div>
+<div class="slide-container">
+    
+    <div id="slide-0" class="slide active">
+        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1920&q=80" alt="Team working" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="text-center">
+            <h1 class="text-white mb-4 animated-item">Aplikasi Berbasis CLI</h1>
+            <h2 class="text-3xl font-semibold mb-12 animated-item">Disusun oleh Kelompok 2</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-8 max-w-5xl mx-auto">
+                <div class="text-center animated-item"><div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div><h3 class="text-xl font-bold">Adam Wahyu Haryadi</h3></div>
+                <div class="text-center animated-item"><div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div><h3 class="text-xl font-bold">Plorentina Purba</h3></div>
+                <div class="text-center animated-item"><div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div><h3 class="text-xl font-bold">Nathan Alvino Fam</h3></div>
+                <div class="text-center animated-item"><div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div><h3 class="text-xl font-bold">Aquinus Arfan</h3></div>
+                <div class="text-center animated-item col-span-2 lg:col-span-1"><div data-lucide="user-circle-2" class="w-20 h-20 mx-auto mb-3 text-[#79c0ff]"></div><h3 class="text-xl font-bold">Yeshalom Gulo</h3></div>
             </div>
         </div>
-
-        <div class="slide">
-            <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div class="order-last md:order-first">
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-6 rainbow-gradient-text">Pengantar CLI</h1>
-                    <p class="text-lg md:text-xl mb-4 leading-relaxed"><strong class="font-bold text-sky-400">Definisi:</strong> Antarmuka berbasis teks untuk interaksi dengan sistem operasi via perintah.</p>
-                    <p class="text-lg md:text-xl mb-4 leading-relaxed"><strong class="font-bold text-sky-400">Contoh:</strong> Terminal (Linux/Mac) dan Command Prompt/PowerShell (Windows).</p>
-                    <p class="text-lg md:text-xl mt-8 pt-4 border-t border-slate-700 leading-relaxed"><strong class="font-bold text-sky-400">Fungsi Umum:</strong></p>
-                    <ul class="list-none text-base md:text-lg space-y-2 text-slate-300">
-                        <li>• Menjalankan skrip (Bash, Python)</li>
-                        <li>• Mengotomasi tugas (cron)</li>
-                        <li>• Mengelola server remote via SSH</li>
-                    </ul>
-                </div>
-                <div><img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800" alt="Kode di terminal" class="slide-image"></div>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div><img src="https://images.unsplash.com/photo-1617396900799-f4ec2b43c7ae?w=800" alt="Kode dan terminal berdampingan" class="slide-image"></div>
-                <div>
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Karakteristik CLI</h1>
-                    <ul class="list-none text-lg md:text-xl space-y-5 text-slate-300">
-                        <li><strong class="font-bold text-sky-400">Berbasis Teks:</strong> Input keyboard, output teks.</li>
-                        <li><strong class="font-bold text-sky-400">Responsif & Ringan:</strong> Hemat sumber daya CPU/RAM.</li>
-                        <li><strong class="font-bold text-sky-400">Modular dengan Shell:</strong> Berjalan di shell kaya fitur.</li>
-                        <li><strong class="font-bold text-sky-400">Multi-platform:</strong> Mayoritas bisa lintas sistem operasi.</li>
-                        <li><strong class="font-bold text-sky-400">Kurva Belajar:</strong> Butuh pemahaman sintaks.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide">
-             <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div class="order-last md:order-first flex flex-col justify-center">
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">CLI vs GUI</h1>
-                    <div class="space-y-6">
-                         <div>
-                            <h2 class="text-2xl font-bold mb-2 text-sky-400">CLI (Command Line)</h2>
-                            <ul class="list-none space-y-2 text-slate-300">
-                                <li>🔥 <strong class="font-bold">Kecepatan:</strong> Sangat cepat untuk ahli.</li>
-                                <li>⚙️ <strong class="font-bold">Otomasi:</strong> Unggul dalam skrip & tugas berulang.</li>
-                                <li>💾 <strong class="font-bold">Sumber Daya:</strong> Sangat ringan & efisien.</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold mb-2 text-fuchsia-400">GUI (Graphical User)</h2>
-                            <ul class="list-none space-y-2 text-slate-300">
-                                <li>🖱️ <strong class="font-bold">Kemudahan:</strong> Ramah pemula & sangat visual.</li>
-                                <li>🖼️ <strong class="font-bold">Antarmuka:</strong> Ikon, tombol, & jendela interaktif.</li>
-                                <li>⚖️ <strong class="font-bold">Sumber Daya:</strong> Lebih berat karena grafis.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div><img src="https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=800" alt="Perbandingan kode dan antarmuka grafis" class="slide-image"></div>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div><img src="https://images.unsplash.com/photo-1581472723648-909f4851d4ae?w=800" alt="Kode untuk aplikasi chat" class="slide-image"></div>
-                <div>
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Keunggulan & Kekurangan</h1>
-                    <div class="grid grid-cols-1 gap-8 text-lg">
-                        <div>
-                            <h2 class="text-2xl font-bold mb-2 text-green-400">👍 Keunggulan</h2>
-                            <ul class="list-none space-y-2 text-slate-300">
-                                <li>✅ Eksekusi super cepat & efisien</li>
-                                <li>✅ Mengelola server jarak jauh (via SSH)</li>
-                                <li>✅ Otomasi tugas berulang</li>
-                                <li>✅ Kontrol sistem lebih dalam & presisi</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold mb-2 text-red-400">👎 Kekurangan</h2>
-                            <ul class="list-none space-y-2 text-slate-300">
-                                <li>❌ Kurva pembelajaran tinggi</li>
-                                <li>❌ Rentan kesalahan ketik (typo)</li>
-                                <li>❌ Tidak intuitif bagi pengguna pemula</li>
-                            </ul>
-                        </div>
+    </div>
+    
+    <div id="slide-1" class="slide">
+        <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=1920&q=80" alt="Terminal code" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+            <div class="order-last md:order-first">
+                <h1 class="header-text animated-item">Pengantar CLI</h1>
+                <p class="text-gray-400 mt-4 mb-8 text-xl animated-item">Command-Line Interface</p>
+                <div class="space-y-4 text-lg">
+                    <p class="animated-item"><strong class="font-bold text-sky-300">Definisi:</strong> Antarmuka berbasis teks untuk interaksi dengan sistem operasi via perintah.</p>
+                    <p class="animated-item"><strong class="font-bold text-sky-300">Contoh:</strong> Terminal (Linux/Mac) dan Command Prompt/PowerShell (Windows).</p>
+                    <div class="pt-4 border-t border-slate-700 mt-6 animated-item">
+                        <strong class="font-bold text-sky-300">Fungsi Umum:</strong>
+                        <ul class="list-disc list-inside ml-4 mt-2 space-y-2 text-slate-300">
+                            <li>Menjalankan skrip (Bash, Python)</li>
+                            <li>Mengotomasi tugas (cron)</li>
+                            <li>Mengelola server remote via SSH</li>
+                        </ul>
                     </div>
                 </div>
             </div>
+            <div class="animated-item"><img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800" alt="Kode di terminal" class="slide-image"></div>
         </div>
-        
-        <div class="slide">
-             <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                 <div class="order-last md:order-first">
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Tools Pembuatan CLI</h1>
-                     <ul class="list-none text-lg md:text-xl space-y-4 text-slate-300">
-                        <li><strong class="font-bold text-sky-400">Python:</strong> argparse, Click, Typer</li>
-                        <li><strong class="font-bold text-sky-400">Node.js:</strong> commander, yargs, Inquirer.js</li>
-                        <li><strong class="font-bold text-sky-400">Go:</strong> Cobra, flag</li>
-                        <li><strong class="font-bold text-sky-400">Rust:</strong> crate clap</li>
-                        <li><strong class="font-bold text-sky-400">Lainnya:</strong> C/C++, PHP, .NET, Bash</li>
-                    </ul>
-                </div>
-                <div><img src="https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800" alt="Logo berbagai bahasa pemrograman" class="slide-image"></div>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div><img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800" alt="Laptop dengan kode aplikasi" class="slide-image"></div>
-                <div>
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Contoh Aplikasi CLI</h1>
-                    <ul class="list-none text-lg md:text-xl space-y-4 text-slate-300">
-                        <li><strong class="font-bold text-sky-400">📝 To-Do List:</strong> Mengelola daftar tugas via terminal.</li>
-                        <li><strong class="font-bold text-sky-400">➕ Kalkulator:</strong> Program yang menerima operasi matematika.</li>
-                        <li><strong class="font-bold text-sky-400">🔄 Pengolah Teks:</strong> Membalik atau menghitung karakter.</li>
-                        <li><strong class="font-bold text-sky-400">🖥️ Utilitas Sistem:</strong> Perintah seperti <code>ls</code>, <code>grep</code>, atau Git.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div class="order-last md:order-first">
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Langkah Pembuatan</h1>
-                    <ul class="list-none text-lg md:text-xl space-y-3 text-slate-300">
-                        <li><strong class="font-bold text-sky-400">1. Tentukan Kebutuhan:</strong> Rancang fungsionalitas utama.</li>
-                        <li><strong class="font-bold text-sky-400">2. Parsing Argumen:</strong> Baca input, opsi, dan flag.</li>
-                        <li><strong class="font-bold text-sky-400">3. Validasi Input:</strong> Cek input agar aplikasi tidak error.</li>
-                        <li><strong class="font-bold text-sky-400">4. Proses Logika:</strong> Eksekusi fungsi berdasarkan perintah.</li>
-                        <li><strong class="font-bold text-sky-400">5. Tampilkan Output:</strong> Berikan hasil yang jelas ke terminal.</li>
-                        <li><strong class="font-bold text-sky-400">6. Pengujian:</strong> Uji coba di berbagai skenario.</li>
-                        <li><strong class="font-bold text-sky-400">7. Distribusi:</strong> Buat aplikasi mudah diinstal.</li>
-                    </ul>
-                </div>
-                <div><img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800" alt="Papan tulis dengan diagram alur" class="slide-image"></div>
-            </div>
-        </div>
-        
-        <div class="slide">
-             <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div><img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=800" alt="Checklist" class="slide-image"></div>
-                <div>
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Praktik Terbaik</h1>
-                    <ul class="list-none text-lg md:text-xl space-y-4 text-slate-300">
-                        <li><strong class="font-bold text-sky-400">Pesan Bantuan:</strong> Sediakan opsi <code>--help</code> yang informatif.</li>
-                        <li><strong class="font-bold text-sky-400">Penanganan Error:</strong> Berikan pesan kesalahan yang deskriptif.</li>
-                        <li><strong class="font-bold text-sky-400">Autocompletion:</strong> Pertimbangkan fitur tab-autocomplete.</li>
-                        <li><strong class="font-bold text-sky-400">Versioning:</strong> Terapkan penomoran versi yang semantis.</li>
-                        <li><strong class="font-bold text-sky-400">Keamanan:</strong> Hati-hati mengelola input dari pengguna.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="slide-content grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div class="order-last md:order-first">
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-8 rainbow-gradient-text">Kesimpulan</h1>
-                    <p class="text-lg md:text-xl mb-4 leading-relaxed"><strong class="text-sky-400">CLI</strong> tetap menjadi alat penting bagi developer & admin, menawarkan kontrol mendalam dan efisiensi sumber daya.</p>
-                    <p class="text-lg md:text-xl mb-4 leading-relaxed">Kemampuan <strong class="text-sky-400">otomasi tugas</strong> dan <strong class="text-sky-400">manajemen server jarak jauh</strong> membuatnya tak tergantikan.</p>
-                    <p class="text-lg md:text-xl leading-relaxed">Memahami CLI adalah <strong class="text-sky-400">keterampilan krusial</strong> dalam dunia IT modern.</p>
-                </div>
-                <div><img src="https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=800" alt="Aplikasi chat di layar ponsel" class="slide-image"></div>
-            </div>
-        </div>
-
-        <div class="slide">
-            <div class="slide-content text-center">
-                <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-6 text-sky-300">
-                    Terima Kasih!
-                </h1>
-                <p class="text-2xl md:text-4xl font-bold text-slate-300">
-                    Ada pertanyaan?
-                </p>
-            </div>
-        </div>
-
     </div>
 
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-4">
-        <button id="prevBtn" class="nav-button">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-        </button>
-        <button id="nextBtn" class="nav-button">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
-        </button>
+    <div id="slide-2" class="slide">
+        <img src="https://images.unsplash.com/photo-1617396900799-f4ec2b43c7ae?auto=format&fit=crop&w=1920&q=80" alt="Code and terminal" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+             <div class="animated-item"><img src="https://images.unsplash.com/photo-1617396900799-f4ec2b43c7ae?w=800" alt="Kode dan terminal berdampingan" class="slide-image"></div>
+            <div>
+                <h1 class="header-text animated-item">Karakteristik CLI</h1>
+                <ul class="list-none text-xl space-y-5 text-slate-200 mt-8">
+                    <li class="animated-item flex items-start"><div data-lucide="terminal" class="w-7 h-7 mr-4 text-sky-400"></div><div><strong class="font-bold">Berbasis Teks:</strong> Input keyboard, output teks.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="zap" class="w-7 h-7 mr-4 text-sky-400"></div><div><strong class="font-bold">Responsif & Ringan:</strong> Hemat sumber daya CPU/RAM.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="layers" class="w-7 h-7 mr-4 text-sky-400"></div><div><strong class="font-bold">Modular dengan Shell:</strong> Berjalan di shell kaya fitur.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="globe" class="w-7 h-7 mr-4 text-sky-400"></div><div><strong class="font-bold">Multi-platform:</strong> Mayoritas bisa lintas sistem operasi.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="bar-chart" class="w-7 h-7 mr-4 text-sky-400"></div><div><strong class="font-bold">Kurva Belajar:</strong> Butuh pemahaman sintaks.</div></li>
+                </ul>
+            </div>
+        </div>
     </div>
 
-    <script>
+    <div id="slide-3" class="slide">
+        <img src="https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1920&q=80" alt="Code comparison" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="w-full max-w-7xl text-center">
+            <h1 class="text-white animated-item">CLI vs GUI</h1>
+            <p class="text-gray-400 mb-12 text-xl animated-item">Perbandingan Dua Paradigma Antarmuka</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-gray-800/50 p-8 rounded-lg border-l-4 border-cyan-500 text-left animated-item">
+                    <h2 class="text-cyan-400 mb-4 flex items-center"><div data-lucide="chevron-right" class="w-8 h-8 mr-3"></div> CLI (Command Line)</h2>
+                    <ul class="list-none space-y-3 text-lg">
+                        <li>🔥 <strong class="font-semibold">Kecepatan:</strong> Sangat cepat untuk ahli.</li>
+                        <li>⚙️ <strong class="font-semibold">Otomasi:</strong> Unggul dalam skrip & tugas berulang.</li>
+                        <li>💾 <strong class="font-semibold">Sumber Daya:</strong> Sangat ringan & efisien.</li>
+                    </ul>
+                </div>
+                <div class="bg-gray-800/50 p-8 rounded-lg border-l-4 border-fuchsia-500 text-left animated-item">
+                    <h2 class="text-fuchsia-400 mb-4 flex items-center"><div data-lucide="mouse-pointer-2" class="w-8 h-8 mr-3"></div> GUI (Graphical User)</h2>
+                    <ul class="list-none space-y-3 text-lg">
+                        <li>🖱️ <strong class="font-semibold">Kemudahan:</strong> Ramah pemula & sangat visual.</li>
+                        <li>🖼️ <strong class="font-semibold">Antarmuka:</strong> Ikon, tombol, & jendela interaktif.</li>
+                        <li>⚖️ <strong class="font-semibold">Sumber Daya:</strong> Lebih berat karena grafis.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="slide-4" class="slide">
+        <img src="https://images.unsplash.com/photo-1581472723648-909f4851d4ae?auto=format&fit=crop&w=1920&q=80" alt="Weighing pros and cons" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+            <div class="animated-item"><img src="https://images.unsplash.com/photo-1581472723648-909f4851d4ae?w=800" alt="Weighing pros and cons" class="slide-image"></div>
+            <div>
+                <h1 class="header-text animated-item">Keunggulan & Kekurangan</h1>
+                <div class="grid grid-cols-1 gap-8 text-lg mt-8">
+                    <div class="animated-item">
+                        <h2 class="text-2xl font-bold mb-2 text-green-400">👍 Keunggulan</h2>
+                        <ul class="list-disc list-inside space-y-2 text-slate-300">
+                            <li>Eksekusi super cepat & efisien</li>
+                            <li>Mengelola server jarak jauh (via SSH)</li>
+                            <li>Otomasi tugas berulang</li>
+                            <li>Kontrol sistem lebih dalam & presisi</li>
+                        </ul>
+                    </div>
+                    <div class="animated-item">
+                        <h2 class="text-2xl font-bold mb-2 text-red-400">👎 Kekurangan</h2>
+                        <ul class="list-disc list-inside space-y-2 text-slate-300">
+                            <li>Kurva pembelajaran tinggi</li>
+                            <li>Rentan kesalahan ketik (typo)</li>
+                            <li>Tidak intuitif bagi pengguna pemula</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slide-5" class="slide">
+        <img src="https://images.unsplash.com/photo-1627398242454-45a1465c2479?auto=format&fit=crop&w=1920&q=80" alt="Programming language logos" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+            <div class="order-last md:order-first">
+                <h1 class="header-text animated-item">Tools Pembuatan CLI</h1>
+                 <ul class="list-none text-xl space-y-4 text-slate-200 mt-8">
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Python:</strong> argparse, Click, Typer</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Node.js:</strong> commander, yargs, Inquirer.js</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Go:</strong> Cobra, flag</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Rust:</strong> crate clap</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Lainnya:</strong> C/C++, PHP, .NET, Bash</li>
+                </ul>
+            </div>
+            <div class="animated-item"><img src="https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800" alt="Logo berbagai bahasa pemrograman" class="slide-image"></div>
+        </div>
+    </div>
+    
+    <div id="slide-6" class="slide">
+        <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1920&q=80" alt="Laptop with code" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+            <div class="animated-item"><img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800" alt="Laptop dengan kode aplikasi" class="slide-image"></div>
+            <div>
+                <h1 class="header-text animated-item">Contoh Aplikasi CLI</h1>
+                <ul class="list-none text-xl space-y-4 text-slate-200 mt-8">
+                    <li class="animated-item flex items-start"><div data-lucide="check-square" class="w-7 h-7 mr-4 text-sky-400 flex-shrink-0"></div><div><strong class="font-bold">To-Do List:</strong> Mengelola daftar tugas via terminal.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="calculator" class="w-7 h-7 mr-4 text-sky-400 flex-shrink-0"></div><div><strong class="font-bold">Kalkulator:</strong> Program yang menerima operasi matematika.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="pilcrow" class="w-7 h-7 mr-4 text-sky-400 flex-shrink-0"></div><div><strong class="font-bold">Pengolah Teks:</strong> Membalik atau menghitung karakter.</div></li>
+                    <li class="animated-item flex items-start"><div data-lucide="server" class="w-7 h-7 mr-4 text-sky-400 flex-shrink-0"></div><div><strong class="font-bold">Utilitas Sistem:</strong> Perintah seperti <code>ls</code>, <code>grep</code>, atau Git.</div></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="slide-7" class="slide">
+        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80" alt="Flowchart on a board" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="text-center w-full max-w-4xl">
+            <h1 class="header-text animated-item">Langkah Pembuatan</h1>
+            <p class="text-gray-400 mb-10 text-xl animated-item">Dari Konsep Menjadi Aplikasi Fungsional</p>
+            <ol class="space-y-6 text-left text-xl">
+                <li class="animated-item p-4 bg-gray-800/60 rounded-lg flex items-center"><strong class="text-sky-300 mr-4">1.</strong> Tentukan Kebutuhan: Rancang fungsionalitas utama.</li>
+                <li class="animated-item p-4 bg-gray-800/60 rounded-lg flex items-center"><strong class="text-sky-300 mr-4">2.</strong> Parsing Argumen: Baca input, opsi, dan flag.</li>
+                <li class="animated-item p-4 bg-gray-800/60 rounded-lg flex items-center"><strong class="text-sky-300 mr-4">3.</strong> Validasi Input: Cek input agar aplikasi tidak error.</li>
+                <li class="animated-item p-4 bg-gray-800/60 rounded-lg flex items-center"><strong class="text-sky-300 mr-4">4.</strong> Proses Logika: Eksekusi fungsi berdasarkan perintah.</li>
+                <li class="animated-item p-4 bg-gray-800/60 rounded-lg flex items-center"><strong class="text-sky-300 mr-4">5.</strong> Tampilkan Output: Berikan hasil yang jelas ke terminal.</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div id="slide-8" class="slide">
+        <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?auto=format&fit=crop&w=1920&q=80" alt="Checklist" class="slide-bg">
+        <div class="slide-overlay"></div>
+         <div class="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+            <div class="animated-item"><img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=800" alt="Checklist" class="slide-image"></div>
+            <div>
+                <h1 class="header-text animated-item">Praktik Terbaik</h1>
+                <ul class="list-none text-xl space-y-4 text-slate-200 mt-8">
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Pesan Bantuan:</strong> Sediakan opsi <code>--help</code> yang informatif.</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Penanganan Error:</strong> Berikan pesan kesalahan yang deskriptif.</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Autocompletion:</strong> Pertimbangkan fitur tab-autocomplete.</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Versioning:</strong> Terapkan penomoran versi yang semantis.</li>
+                    <li class="animated-item"><strong class="font-bold text-sky-300">Keamanan:</strong> Hati-hati mengelola input dari pengguna.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div id="slide-9" class="slide">
+        <img src="https://images.unsplash.com/photo-1611606063065-ee7946f0787a?auto=format&fit=crop&w=1920&q=80" alt="Abstract tech background" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="text-center max-w-4xl">
+            <h1 class="text-white animated-item">Kesimpulan</h1>
+            <div class="space-y-6 mt-8 text-xl">
+                <p class="animated-item">CLI tetap menjadi alat penting bagi developer & admin, menawarkan <strong class="text-sky-300">kontrol mendalam</strong> dan <strong class="text-sky-300">efisiensi sumber daya.</strong></p>
+                <p class="animated-item">Kemampuan <strong class="text-sky-300">otomasi tugas</strong> dan <strong class="text-sky-300">manajemen server jarak jauh</strong> membuatnya tak tergantikan.</p>
+                <p class="animated-item text-2xl mt-8 font-bold text-yellow-300">Memahami CLI adalah keterampilan krusial dalam dunia IT modern.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="slide-10" class="slide">
+        <img src="https://images.unsplash.com/photo-1529119368496-2dfda6ec2804?auto=format&fit=crop&w=1920&q=80" alt="Handshake" class="slide-bg">
+        <div class="slide-overlay"></div>
+        <div class="text-center flex flex-col items-center justify-center h-full">
+            <div data-lucide="sparkles" class="w-20 h-20 mb-6 text-yellow-300 animated-item"></div>
+            <h1 class="text-white mb-4 animated-item">Terima Kasih</h1>
+            <h2 class="text-4xl text-[#79c0ff] font-bold animated-item">Ada pertanyaan?</h2>
+        </div>
+    </div>
+
+</div>
+
+<div class="navigation-overlay">
+    <div class="flex justify-center items-center space-x-4 max-w-lg mx-auto">
+        <button id="download-pdf-btn" class="nav-button bg-teal-600 hover:bg-teal-500 text-white font-bold p-3 rounded-full flex items-center" title="Download as PDF">
+            <i data-lucide="download" class="w-5 h-5"></i>
+        </button>
+        <div class="flex justify-center items-center space-x-4 bg-gray-800/50 backdrop-blur-sm rounded-full p-1">
+            <button id="prev-btn" class="nav-button bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-5 rounded-full flex items-center disabled:opacity-50" disabled>
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+            <span id="slide-indicator" class="text-lg text-white font-semibold tabular-nums">1 / 11</span>
+            <button id="next-btn" class="nav-button bg-[#79c0ff] hover:bg-[#68a7e0] text-[#0d1117] font-bold py-2 px-5 rounded-full flex items-center">
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
         const slides = document.querySelectorAll('.slide');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const progressBar = document.getElementById('progressBar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const downloadBtn = document.getElementById('download-pdf-btn');
+        const indicator = document.getElementById('slide-indicator');
+        const progressBar = document.getElementById('progress-bar');
         let currentSlide = 0;
-        let isAnimating = false;
+        const totalSlides = slides.length;
 
-        function showSlide(index, direction) {
-            if (isAnimating) return;
-            isAnimating = true;
+        function updateSlide() {
+            slides.forEach((slide) => {
+                slide.classList.remove('active');
+            });
+            slides[currentSlide].classList.add('active');
 
-            const outgoingSlide = slides[currentSlide];
-            const incomingSlide = slides[index];
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
             
-            // Set direction for incoming slide
-            incomingSlide.style.transform = direction === 'next' ? 'translateX(100%)' : 'translateX(-100%)';
-            incomingSlide.classList.add('active');
+            indicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
             
-            // Animate outgoing slide
-            outgoingSlide.classList.add('exiting');
-            outgoingSlide.style.transform = direction === 'next' ? 'translateX(-100%)' : 'translateX(100%)';
-
-            // Force reflow to apply initial transform before transition
-            void incomingSlide.offsetWidth;
-
-            // Animate incoming slide
-            incomingSlide.style.transform = 'translateX(0)';
-            
-            setTimeout(() => {
-                outgoingSlide.classList.remove('active', 'exiting');
-                outgoingSlide.style.transform = ''; // Reset transform
-                currentSlide = index;
-                updateUI();
-                isAnimating = false;
-            }, 500); // Match CSS transition duration
-        }
-
-        function updateUI() {
-            prevBtn.classList.toggle('hidden', currentSlide === 0);
-            nextBtn.classList.toggle('hidden', currentSlide === slides.length - 1);
-            const progressPercentage = (currentSlide / (slides.length - 1)) * 100;
+            const progressPercentage = (totalSlides > 1) ? (currentSlide / (totalSlides - 1)) * 100 : 0;
             progressBar.style.width = `${progressPercentage}%`;
+
+            lucide.createIcons();
         }
+
+        function goToNextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function goToPrevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        downloadBtn.addEventListener('click', () => window.print());
+        nextBtn.addEventListener('click', goToNextSlide);
+        prevBtn.addEventListener('click', goToPrevSlide);
         
-        function next() {
-            if (currentSlide < slides.length - 1) {
-                showSlide(currentSlide + 1, 'next');
-            }
-        }
-
-        function prev() {
-             if (currentSlide > 0) {
-                showSlide(currentSlide - 1, 'prev');
-            }
-        }
-
-        nextBtn.addEventListener('click', next);
-        prevBtn.addEventListener('click', prev);
-
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') {
-                next();
-            } else if (e.key === 'ArrowLeft') {
-                prev();
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'd') {
+                e.preventDefault();
+                goToNextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+                e.preventDefault();
+                goToPrevSlide();
             }
         });
+        
+        updateSlide();
+    });
+</script>
 
-        // Initial setup
-        const initialSlide = slides[currentSlide];
-        initialSlide.style.transform = 'translateX(0)';
-        updateUI();
-    </script>
 </body>
 </html>
